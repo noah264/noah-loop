@@ -1,0 +1,441 @@
+# Noah-Loop 微服务完整部署配置
+version: '3.8'
+
+services:
+  # ====================
+  # 基础设施服务
+  # ====================
+  
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: noah-loop-postgres
+    environment:
+      - POSTGRES_DB=agent_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - noah-loop-network
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: noah-loop-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass redis123
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - noah-loop-network
+
+  # etcd 服务发现
+  etcd:
+    image: bitnami/etcd:latest
+    container_name: noah-loop-etcd
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_INITIAL_CLUSTER=node1=http://0.0.0.0:2380
+      - ETCD_NAME=node1
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    volumes:
+      - etcd_data:/etcd-data
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - noah-loop-network
+
+  # Jaeger 链路追踪
+  jaeger:
+    image: jaegertracing/all-in-one:1.50
+    container_name: noah-loop-jaeger
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger collector HTTP
+      - "14250:14250"  # Jaeger collector gRPC
+      - "9411:9411"    # Zipkin compatible
+    volumes:
+      - jaeger_data:/tmp
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:16686/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - noah-loop-network
+
+  # ====================
+  # 应用服务
+  # ====================
+
+  # API 网关
+  api-gateway:
+    image: noah-loop/api-gateway:${VERSION:-1.0.0}
+    container_name: noah-loop-api-gateway
+    environment:
+      - APP_NAME=noah-loop
+      - APP_VERSION=${VERSION:-1.0.0}
+      - APP_ENVIRONMENT=${ENVIRONMENT:-development}
+      - APP_DEBUG=${DEBUG:-false}
+      - HTTP_PORT=8080
+      - GRPC_PORT=9090
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres123
+      - DATABASE_DATABASE=agent_db
+      - DATABASE_SSLMODE=disable
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=redis123
+      - ETCD_ENDPOINTS=etcd:2379
+      - TRACING_ENABLED=true
+      - TRACING_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - TRACING_SAMPLE_RATE=0.1
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      etcd:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - noah-loop-network
+
+  # Agent 智能体服务
+  agent:
+    image: noah-loop/agent:${VERSION:-1.0.0}
+    container_name: noah-loop-agent
+    environment:
+      - APP_NAME=noah-loop
+      - APP_VERSION=${VERSION:-1.0.0}
+      - APP_ENVIRONMENT=${ENVIRONMENT:-development}
+      - HTTP_PORT=8081
+      - GRPC_PORT=9091
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres123
+      - DATABASE_DATABASE=agent_db
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=redis123
+      - ETCD_ENDPOINTS=etcd:2379
+      - TRACING_ENABLED=true
+      - TRACING_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - SERVICE_NAME=agent
+    ports:
+      - "8081:8081"
+      - "9091:9091"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      etcd:
+        condition: service_healthy
+    volumes:
+      - agent_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - noah-loop-network
+
+  # LLM 大语言模型服务
+  llm:
+    image: noah-loop/llm:${VERSION:-1.0.0}
+    container_name: noah-loop-llm
+    environment:
+      - APP_NAME=noah-loop
+      - APP_VERSION=${VERSION:-1.0.0}
+      - APP_ENVIRONMENT=${ENVIRONMENT:-development}
+      - HTTP_PORT=8082
+      - GRPC_PORT=9092
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres123
+      - DATABASE_DATABASE=agent_db
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=redis123
+      - ETCD_ENDPOINTS=etcd:2379
+      - TRACING_ENABLED=true
+      - TRACING_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - SERVICE_NAME=llm
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+    ports:
+      - "8082:8082"
+      - "9092:9092"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      etcd:
+        condition: service_healthy
+    volumes:
+      - llm_models:/app/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - noah-loop-network
+
+  # MCP 模型上下文协议服务
+  mcp:
+    image: noah-loop/mcp:${VERSION:-1.0.0}
+    container_name: noah-loop-mcp
+    environment:
+      - APP_NAME=noah-loop
+      - APP_VERSION=${VERSION:-1.0.0}
+      - APP_ENVIRONMENT=${ENVIRONMENT:-development}
+      - HTTP_PORT=8083
+      - GRPC_PORT=9093
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres123
+      - DATABASE_DATABASE=agent_db
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=redis123
+      - ETCD_ENDPOINTS=etcd:2379
+      - TRACING_ENABLED=true
+      - TRACING_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - SERVICE_NAME=mcp
+    ports:
+      - "8083:8083"
+      - "9093:9093"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      etcd:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - noah-loop-network
+
+  # Orchestrator 编排器服务
+  orchestrator:
+    image: noah-loop/orchestrator:${VERSION:-1.0.0}
+    container_name: noah-loop-orchestrator
+    environment:
+      - APP_NAME=noah-loop
+      - APP_VERSION=${VERSION:-1.0.0}
+      - APP_ENVIRONMENT=${ENVIRONMENT:-development}
+      - HTTP_PORT=8084
+      - GRPC_PORT=9094
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres123
+      - DATABASE_DATABASE=agent_db
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=redis123
+      - ETCD_ENDPOINTS=etcd:2379
+      - TRACING_ENABLED=true
+      - TRACING_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - SERVICE_NAME=orchestrator
+    ports:
+      - "8084:8084"
+      - "9094:9094"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      etcd:
+        condition: service_healthy
+    volumes:
+      - orchestrator_workflows:/app/workflows
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - noah-loop-network
+
+  # RAG 检索增强生成服务
+  rag:
+    image: noah-loop/rag:${VERSION:-1.0.0}
+    container_name: noah-loop-rag
+    environment:
+      - APP_NAME=noah-loop
+      - APP_VERSION=${VERSION:-1.0.0}
+      - APP_ENVIRONMENT=${ENVIRONMENT:-development}
+      - HTTP_PORT=8085
+      - GRPC_PORT=9095
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres123
+      - DATABASE_DATABASE=agent_db
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=redis123
+      - ETCD_ENDPOINTS=etcd:2379
+      - TRACING_ENABLED=true
+      - TRACING_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - SERVICE_NAME=rag
+    ports:
+      - "8085:8085"
+      - "9095:9095"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      etcd:
+        condition: service_healthy
+    volumes:
+      - rag_index:/app/index
+      - rag_documents:/app/documents
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - noah-loop-network
+
+  # Notify 通知服务
+  notify:
+    image: noah-loop/notify:${VERSION:-1.0.0}
+    container_name: noah-loop-notify
+    environment:
+      - APP_NAME=noah-loop
+      - APP_VERSION=${VERSION:-1.0.0}
+      - APP_ENVIRONMENT=${ENVIRONMENT:-development}
+      - HTTP_PORT=8086
+      - GRPC_PORT=9096
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres123
+      - DATABASE_DATABASE=agent_db
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=redis123
+      - ETCD_ENDPOINTS=etcd:2379
+      - TRACING_ENABLED=true
+      - TRACING_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - SERVICE_NAME=notify
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+    ports:
+      - "8086:8086"
+      - "9096:9096"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      etcd:
+        condition: service_healthy
+    volumes:
+      - notify_templates:/app/templates
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - noah-loop-network
+
+# 持久化卷
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  etcd_data:
+    driver: local
+  jaeger_data:
+    driver: local
+  agent_data:
+    driver: local
+  llm_models:
+    driver: local
+  orchestrator_workflows:
+    driver: local
+  rag_index:
+    driver: local
+  rag_documents:
+    driver: local
+  notify_templates:
+    driver: local
+
+# 网络配置
+networks:
+  noah-loop-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

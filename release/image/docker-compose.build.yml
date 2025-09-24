@@ -1,0 +1,92 @@
+# Noah-Loop 微服务镜像构建配置
+version: '3.8'
+
+services:
+  # API 网关
+  api-gateway:
+    build:
+      context: ../../
+      dockerfile: release/image/Dockerfile.api-gateway
+      args:
+        - BUILD_TIME=${BUILD_TIME:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        - GIT_COMMIT=${GIT_COMMIT:-unknown}
+        - VERSION=${VERSION:-1.0.0}
+    image: noah-loop/api-gateway:${VERSION:-1.0.0}
+    container_name: noah-loop-api-gateway-build
+    
+  # Agent 智能体服务
+  agent:
+    build:
+      context: ../../
+      dockerfile: release/image/Dockerfile.agent
+      args:
+        - BUILD_TIME=${BUILD_TIME:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        - GIT_COMMIT=${GIT_COMMIT:-unknown}
+        - VERSION=${VERSION:-1.0.0}
+    image: noah-loop/agent:${VERSION:-1.0.0}
+    container_name: noah-loop-agent-build
+    
+  # LLM 大语言模型服务
+  llm:
+    build:
+      context: ../../
+      dockerfile: release/image/Dockerfile.llm
+      args:
+        - BUILD_TIME=${BUILD_TIME:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        - GIT_COMMIT=${GIT_COMMIT:-unknown}
+        - VERSION=${VERSION:-1.0.0}
+    image: noah-loop/llm:${VERSION:-1.0.0}
+    container_name: noah-loop-llm-build
+    
+  # MCP 模型上下文协议服务
+  mcp:
+    build:
+      context: ../../
+      dockerfile: release/image/Dockerfile.mcp
+      args:
+        - BUILD_TIME=${BUILD_TIME:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        - GIT_COMMIT=${GIT_COMMIT:-unknown}
+        - VERSION=${VERSION:-1.0.0}
+    image: noah-loop/mcp:${VERSION:-1.0.0}
+    container_name: noah-loop-mcp-build
+    
+  # Orchestrator 编排器服务
+  orchestrator:
+    build:
+      context: ../../
+      dockerfile: release/image/Dockerfile.orchestrator
+      args:
+        - BUILD_TIME=${BUILD_TIME:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        - GIT_COMMIT=${GIT_COMMIT:-unknown}
+        - VERSION=${VERSION:-1.0.0}
+    image: noah-loop/orchestrator:${VERSION:-1.0.0}
+    container_name: noah-loop-orchestrator-build
+    
+  # RAG 检索增强生成服务
+  rag:
+    build:
+      context: ../../
+      dockerfile: release/image/Dockerfile.rag
+      args:
+        - BUILD_TIME=${BUILD_TIME:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        - GIT_COMMIT=${GIT_COMMIT:-unknown}
+        - VERSION=${VERSION:-1.0.0}
+    image: noah-loop/rag:${VERSION:-1.0.0}
+    container_name: noah-loop-rag-build
+    
+  # Notify 通知服务
+  notify:
+    build:
+      context: ../../
+      dockerfile: release/image/Dockerfile.notify
+      args:
+        - BUILD_TIME=${BUILD_TIME:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        - GIT_COMMIT=${GIT_COMMIT:-unknown}
+        - VERSION=${VERSION:-1.0.0}
+    image: noah-loop/notify:${VERSION:-1.0.0}
+    container_name: noah-loop-notify-build
+
+# 构建时不需要网络和卷
+networks:
+  default:
+    name: noah-loop-build

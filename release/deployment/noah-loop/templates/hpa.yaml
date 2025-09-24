@@ -1,0 +1,65 @@
+{{/* API Gateway HPA */}}
+{{- if and .Values.apiGateway.enabled .Values.apiGateway.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "noah-loop.fullname" . }}-api-gateway
+  labels:
+    {{- include "noah-loop.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-gateway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "noah-loop.fullname" . }}-api-gateway
+  minReplicas: {{ .Values.apiGateway.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.apiGateway.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.apiGateway.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.apiGateway.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.apiGateway.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.apiGateway.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+
+{{/* 微服务 HPA 模板 */}}
+{{- range $serviceName, $service := .Values.services }}
+{{- if and $service.enabled $service.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "noah-loop.fullname" $ }}-{{ $serviceName }}
+  labels:
+    {{- include "noah-loop.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $serviceName }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "noah-loop.fullname" $ }}-{{ $serviceName }}
+  minReplicas: {{ $service.autoscaling.minReplicas }}
+  maxReplicas: {{ $service.autoscaling.maxReplicas }}
+  metrics:
+    {{- if $service.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $service.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}

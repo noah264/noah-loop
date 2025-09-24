@@ -1,0 +1,549 @@
+# Noah-Loop 微服务平台配置
+
+# 全局配置
+global:
+  # 镜像仓库配置
+  imageRegistry: ""
+  imagePullSecrets: []
+  # 存储类
+  storageClass: ""
+  # 服务账户
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+
+# 应用基本信息
+app:
+  name: noah-loop
+  version: "1.0.0"
+  environment: production
+  debug: false
+
+# 镜像配置
+image:
+  registry: docker.io
+  repository: noah-loop
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+# API 网关配置
+apiGateway:
+  enabled: true
+  name: api-gateway
+  replicaCount: 2
+  
+  image:
+    repository: noah-loop/api-gateway
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+    grpcPort: 9090
+    grpcTargetPort: 9090
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  
+  # 健康检查
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# 微服务配置
+services:
+  # Agent 智能体服务
+  agent:
+    enabled: true
+    name: agent
+    replicaCount: 2
+    
+    image:
+      repository: noah-loop/agent
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    
+    service:
+      type: ClusterIP
+      port: 8081
+      targetPort: 8081
+      grpcPort: 9091
+      grpcTargetPort: 9091
+    
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+    
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+  
+  # LLM 大语言模型服务
+  llm:
+    enabled: true
+    name: llm
+    replicaCount: 1
+    
+    image:
+      repository: noah-loop/llm
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    
+    service:
+      type: ClusterIP
+      port: 8082
+      targetPort: 8082
+      grpcPort: 9092
+      grpcTargetPort: 9092
+    
+    resources:
+      limits:
+        cpu: 4000m
+        memory: 4Gi
+      requests:
+        cpu: 2000m
+        memory: 2Gi
+    
+    autoscaling:
+      enabled: false  # LLM服务可能需要GPU，不适合自动扩缩
+  
+  # MCP 模型上下文协议服务
+  mcp:
+    enabled: true
+    name: mcp
+    replicaCount: 2
+    
+    image:
+      repository: noah-loop/mcp
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    
+    service:
+      type: ClusterIP
+      port: 8083
+      targetPort: 8083
+      grpcPort: 9093
+      grpcTargetPort: 9093
+    
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+    
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+  
+  # Orchestrator 编排器服务
+  orchestrator:
+    enabled: true
+    name: orchestrator
+    replicaCount: 2
+    
+    image:
+      repository: noah-loop/orchestrator
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    
+    service:
+      type: ClusterIP
+      port: 8084
+      targetPort: 8084
+      grpcPort: 9094
+      grpcTargetPort: 9094
+    
+    resources:
+      limits:
+        cpu: 1500m
+        memory: 1.5Gi
+      requests:
+        cpu: 750m
+        memory: 768Mi
+    
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+  
+  # RAG 检索增强生成服务
+  rag:
+    enabled: true
+    name: rag
+    replicaCount: 2
+    
+    image:
+      repository: noah-loop/rag
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    
+    service:
+      type: ClusterIP
+      port: 8085
+      targetPort: 8085
+      grpcPort: 9095
+      grpcTargetPort: 9095
+    
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+    
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 70
+  
+  # Notify 通知服务
+  notify:
+    enabled: true
+    name: notify
+    replicaCount: 2
+    
+    image:
+      repository: noah-loop/notify
+      tag: "1.0.0"
+      pullPolicy: IfNotPresent
+    
+    service:
+      type: ClusterIP
+      port: 8086
+      targetPort: 8086
+      grpcPort: 9096
+      grpcTargetPort: 9096
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 70
+
+# Ingress 配置
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  
+  hosts:
+    - host: noah-loop.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api-gateway
+          port: 8080
+        - path: /api/v1/agent
+          pathType: Prefix
+          service: agent
+          port: 8081
+        - path: /api/v1/llm
+          pathType: Prefix
+          service: llm
+          port: 8082
+        - path: /api/v1/mcp
+          pathType: Prefix
+          service: mcp
+          port: 8083
+        - path: /api/v1/orchestrator
+          pathType: Prefix
+          service: orchestrator
+          port: 8084
+        - path: /api/v1/rag
+          pathType: Prefix
+          service: rag
+          port: 8085
+        - path: /api/v1/notify
+          pathType: Prefix
+          service: notify
+          port: 8086
+  
+  tls:
+    - secretName: noah-loop-tls
+      hosts:
+        - noah-loop.example.com
+
+# 持久化存储
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+# 配置管理
+config:
+  # 数据库配置
+  database:
+    host: noah-loop-postgresql
+    port: 5432
+    database: agent_db
+    sslmode: require
+    maxOpenConns: 25
+    maxIdleConns: 10
+    maxLifetime: "5m"
+  
+  # Redis 配置
+  redis:
+    addr: noah-loop-redis-master:6379
+    db: 0
+    poolSize: 10
+    minIdleConns: 5
+    dialTimeout: "5s"
+    readTimeout: "3s"
+    writeTimeout: "3s"
+  
+  # etcd 配置
+  etcd:
+    endpoints: 
+      - noah-loop-etcd:2379
+    dialTimeout: "5s"
+    dialKeepaliveTime: "10s"
+    dialKeepaliveTimeout: "3s"
+    maxCallSendMsgSize: 2097152
+    maxCallRecvMsgSize: 4194304
+    logLevel: warn
+  
+  # 链路追踪配置
+  tracing:
+    jaegerEndpoint: http://noah-loop-jaeger-collector:14268/api/traces
+    sampleRate: 0.1
+    enabled: true
+  
+  # Kafka 配置（如果需要）
+  kafka:
+    brokers:
+      - noah-loop-kafka:9092
+    topics:
+      events: "noah-loop.events"
+      notifications: "noah-loop.notifications"
+      logs: "noah-loop.logs"
+      metrics: "noah-loop.metrics"
+
+# 密钥配置
+secrets:
+  # 数据库用户密码
+  database:
+    username: postgres
+    password: ""  # 从外部注入或使用现有secret
+    existingSecret: ""
+    existingSecretUsernameKey: username
+    existingSecretPasswordKey: password
+  
+  # Redis 密码
+  redis:
+    password: ""
+    existingSecret: ""
+    existingSecretPasswordKey: auth
+  
+  # 其他敏感配置
+  app:
+    jwtSecret: ""
+    apiKey: ""
+    existingSecret: ""
+
+# 基础设施依赖配置
+# PostgreSQL
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "postgres123"
+    username: "postgres"
+    password: "postgres123"
+    database: "agent_db"
+  architecture: standalone
+  primary:
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 20Gi
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+
+# Redis
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  architecture: standalone
+  master:
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 8Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# etcd
+etcd:
+  enabled: true
+  auth:
+    rbac:
+      create: false
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 8Gi
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Jaeger
+jaeger:
+  enabled: true
+  storage:
+    type: memory
+  agent:
+    enabled: false
+  collector:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+  query:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# Prometheus 监控栈
+prometheus:
+  enabled: true
+  alertmanager:
+    enabled: true
+  grafana:
+    enabled: true
+    adminPassword: "admin123"
+  kubeStateMetrics:
+    enabled: true
+  nodeExporter:
+    enabled: true
+  prometheusOperator:
+    enabled: true
+
+# 节点选择器
+nodeSelector: {}
+
+# 容忍度
+tolerations: []
+
+# 亲和性
+affinity:
+  # Pod反亲和性，确保副本分布在不同节点
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - noah-loop
+        topologyKey: kubernetes.io/hostname
+
+# 安全上下文
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  runAsGroup: 65534
+  fsGroup: 65534
+
+# Pod 安全上下文
+podSecurityContext:
+  fsGroup: 65534
+
+# 网络策略
+networkPolicy:
+  enabled: false
+  ingress:
+    enabled: false
+  egress:
+    enabled: false
+
+# 服务监控
+serviceMonitor:
+  enabled: true
+  namespace: ""
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+
+# Pod 中断预算
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1

@@ -1,0 +1,55 @@
+apiVersion: v2
+name: noah-loop
+description: Noah-Loop 微服务平台 - 一个现代化的智能体编排系统
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+home: https://github.com/noah-loop/noah-loop
+maintainers:
+  - name: Noah-Loop Team
+    email: team@noah-loop.com
+
+keywords:
+  - microservices
+  - ai
+  - orchestration
+  - agents
+  - llm
+
+sources:
+  - https://github.com/noah-loop/noah-loop
+
+dependencies:
+  # PostgreSQL 数据库
+  - name: postgresql
+    version: "12.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+
+  # Redis 缓存
+  - name: redis
+    version: "17.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+
+  # etcd 服务发现和配置中心
+  - name: etcd
+    version: "9.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: etcd.enabled
+
+  # Jaeger 分布式链路追踪
+  - name: jaeger
+    version: "0.x.x"
+    repository: https://jaegertracing.github.io/helm-charts
+    condition: jaeger.enabled
+
+  # Prometheus 监控
+  - name: kube-prometheus-stack
+    version: "51.x.x"
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: prometheus.enabled
+
+annotations:
+  category: Application
+  licenses: Apache-2.0

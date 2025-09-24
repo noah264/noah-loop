@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "noah-loop.fullname" . }}-config
+  labels:
+    {{- include "noah-loop.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    app:
+      name: {{ .Values.app.name }}
+      version: {{ .Values.app.version }}
+      environment: {{ .Values.app.environment }}
+      debug: {{ .Values.app.debug }}
+    
+    database:
+      host: {{ .Values.config.database.host }}
+      port: {{ .Values.config.database.port }}
+      database: {{ .Values.config.database.database }}
+      sslmode: {{ .Values.config.database.sslmode }}
+      max_open_conns: {{ .Values.config.database.maxOpenConns }}
+      max_idle_conns: {{ .Values.config.database.maxIdleConns }}
+      max_lifetime: {{ .Values.config.database.maxLifetime }}
+    
+    redis:
+      addr: {{ .Values.config.redis.addr }}
+      db: {{ .Values.config.redis.db }}
+      pool_size: {{ .Values.config.redis.poolSize }}
+      min_idle_conns: {{ .Values.config.redis.minIdleConns }}
+      dial_timeout: {{ .Values.config.redis.dialTimeout }}
+      read_timeout: {{ .Values.config.redis.readTimeout }}
+      write_timeout: {{ .Values.config.redis.writeTimeout }}
+    
+    etcd:
+      endpoints: 
+        {{- range .Values.config.etcd.endpoints }}
+        - {{ . }}
+        {{- end }}
+      dial_timeout: {{ .Values.config.etcd.dialTimeout }}
+      dial_keepalive_time: {{ .Values.config.etcd.dialKeepaliveTime }}
+      dial_keepalive_timeout: {{ .Values.config.etcd.dialKeepaliveTimeout }}
+      max_call_send_msg_size: {{ .Values.config.etcd.maxCallSendMsgSize }}
+      max_call_recv_msg_size: {{ .Values.config.etcd.maxCallRecvMsgSize }}
+      log_level: {{ .Values.config.etcd.logLevel }}
+    
+    tracing:
+      enabled: {{ .Values.config.tracing.enabled }}
+      jaeger_endpoint: {{ .Values.config.tracing.jaegerEndpoint }}
+      sample_rate: {{ .Values.config.tracing.sampleRate }}
+    
+    {{- if .Values.config.kafka }}
+    kafka:
+      brokers:
+        {{- range .Values.config.kafka.brokers }}
+        - {{ . }}
+        {{- end }}
+      topics:
+        events: {{ .Values.config.kafka.topics.events }}
+        notifications: {{ .Values.config.kafka.topics.notifications }}
+        logs: {{ .Values.config.kafka.topics.logs }}
+        metrics: {{ .Values.config.kafka.topics.metrics }}
+    {{- end }}
+    
+    log:
+      level: info
+      format: json
