@@ -1,0 +1,57 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  - "agent_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Agent智能体应用服务监控
+  - job_name: "agent-llm"
+    static_configs:
+      - targets: ["localhost:8080"]
+    metrics_path: /metrics
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    
+  - job_name: "agent-agent"
+    static_configs:
+      - targets: ["localhost:8081"]
+    metrics_path: /metrics
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    
+  - job_name: "agent-mcp"
+    static_configs:
+      - targets: ["localhost:8082"]
+    metrics_path: /metrics
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    
+  - job_name: "agent-orchestrator"
+    static_configs:
+      - targets: ["localhost:8083"]
+    metrics_path: /metrics
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    
+  - job_name: "agent-gateway"
+    static_configs:
+      - targets: ["localhost:8000"]  # API网关端口
+    metrics_path: /metrics
+    scrape_interval: 10s
+    scrape_timeout: 5s

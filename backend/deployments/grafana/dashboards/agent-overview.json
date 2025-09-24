@@ -1,0 +1,176 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Agent智能体应用监控总览",
+    "tags": ["agent", "overview"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Token消耗总览",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(agent_app_llm_tokens_consumed_total[5m]))",
+            "legendFormat": "Tokens/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 500},
+                {"color": "red", "value": 1000}
+              ]
+            },
+            "unit": "ops"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Token消耗成本",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(agent_app_llm_tokens_cost_total[5m]))",
+            "legendFormat": "Cost/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 0.1},
+                {"color": "red", "value": 0.5}
+              ]
+            },
+            "unit": "currencyUSD"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "服务可用性",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "avg(up)",
+            "legendFormat": "Uptime"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 0.95},
+                {"color": "green", "value": 0.99}
+              ]
+            },
+            "max": 1,
+            "min": 0,
+            "unit": "percentunit"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "HTTP请求速率",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(agent_app_llm_http_requests_total[5m])) by (job)",
+            "legendFormat": "{{ job }}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Requests/sec"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Token消耗趋势",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(agent_app_llm_tokens_consumed_total[5m])) by (model_provider, model_name)",
+            "legendFormat": "{{ model_provider }}/{{ model_name }}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Tokens/sec"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "活跃智能体",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(agent_app_agent_active_agents) by (agent_type, status)",
+            "legendFormat": "{{ agent_type }}-{{ status }}"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "活跃会话",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(agent_app_mcp_active_sessions) by (session_type)",
+            "legendFormat": "{{ session_type }}"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "工作流执行状态",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(agent_app_orchestrator_workflow_executions_total[5m])) by (status)",
+            "legendFormat": "{{ status }}"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "平均响应时间",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(agent_app_llm_http_request_duration_seconds_bucket[5m])) by (le, job))",
+            "legendFormat": "95th percentile - {{ job }}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Seconds"
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "5s"
+  }
+}

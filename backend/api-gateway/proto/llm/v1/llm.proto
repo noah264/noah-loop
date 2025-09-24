@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+package llm.v1;
+
+option go_package = "github.com/noah-loop/backend/api-gateway/proto/llm/v1;llmv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+// LLM服务定义
+service LLMService {
+    // 创建模型
+    rpc CreateModel(CreateModelRequest) returns (CreateModelResponse);
+    
+    // 获取模型
+    rpc GetModel(GetModelRequest) returns (GetModelResponse);
+    
+    // 获取模型列表
+    rpc ListModels(ListModelsRequest) returns (ListModelsResponse);
+    
+    // 处理请求
+    rpc ProcessRequest(ProcessRequestRequest) returns (ProcessRequestResponse);
+    
+    // 流式处理请求
+    rpc StreamProcessRequest(ProcessRequestRequest) returns (stream ProcessRequestResponse);
+    
+    // 获取使用统计
+    rpc GetUsageStats(GetUsageStatsRequest) returns (GetUsageStatsResponse);
+}
+
+// 创建模型请求
+message CreateModelRequest {
+    string name = 1;
+    string provider = 2;
+    string type = 3;
+    string description = 4;
+    int32 max_tokens = 5;
+    double price_per_k = 6;
+    map<string, string> config = 7;
+}
+
+// 创建模型响应
+message CreateModelResponse {
+    Model model = 1;
+}
+
+// 获取模型请求
+message GetModelRequest {
+    string model_id = 1;
+}
+
+// 获取模型响应
+message GetModelResponse {
+    Model model = 1;
+}
+
+// 模型列表请求
+message ListModelsRequest {
+    string provider = 1;
+    string type = 2;
+    int32 page = 3;
+    int32 page_size = 4;
+}
+
+// 模型列表响应
+message ListModelsResponse {
+    repeated Model models = 1;
+    int32 total = 2;
+    int32 page = 3;
+    int32 page_size = 4;
+}
+
+// 处理请求
+message ProcessRequestRequest {
+    string model_id = 1;
+    string user_id = 2;
+    string request_type = 3;
+    google.protobuf.Any input = 4;
+    map<string, string> parameters = 5;
+}
+
+// 处理响应
+message ProcessRequestResponse {
+    string request_id = 1;
+    google.protobuf.Any output = 2;
+    int32 tokens_used = 3;
+    double cost = 4;
+    google.protobuf.Timestamp created_at = 5;
+    bool is_final = 6; // 用于流式响应
+}
+
+// 使用统计请求
+message GetUsageStatsRequest {
+    string user_id = 1;
+    google.protobuf.Timestamp start_time = 2;
+    google.protobuf.Timestamp end_time = 3;
+}
+
+// 使用统计响应
+message GetUsageStatsResponse {
+    int32 total_requests = 1;
+    int32 total_tokens = 2;
+    double total_cost = 3;
+    map<string, ModelUsage> model_usage = 4;
+}
+
+// 模型使用统计
+message ModelUsage {
+    int32 requests = 1;
+    int32 tokens = 2;
+    double cost = 3;
+}
+
+// 模型实体
+message Model {
+    string id = 1;
+    string name = 2;
+    string provider = 3;
+    string type = 4;
+    string description = 5;
+    int32 max_tokens = 6;
+    double price_per_k = 7;
+    map<string, string> config = 8;
+    bool active = 9;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp updated_at = 11;
+}

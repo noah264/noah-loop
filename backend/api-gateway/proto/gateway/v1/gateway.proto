@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package gateway.v1;
+
+option go_package = "github.com/noah-loop/backend/api-gateway/proto/gateway/v1;gatewayv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+// Gateway服务定义
+service GatewayService {
+    // 健康检查
+    rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+    
+    // 获取网关信息
+    rpc GetGatewayInfo(GetGatewayInfoRequest) returns (GetGatewayInfoResponse);
+    
+    // 获取服务状态
+    rpc GetServiceStatus(GetServiceStatusRequest) returns (GetServiceStatusResponse);
+}
+
+// 健康检查请求
+message HealthCheckRequest {}
+
+// 健康检查响应
+message HealthCheckResponse {
+    string status = 1;
+    string service = 2;
+    google.protobuf.Timestamp time = 3;
+    string version = 4;
+}
+
+// 获取网关信息请求
+message GetGatewayInfoRequest {}
+
+// 获取网关信息响应
+message GetGatewayInfoResponse {
+    string name = 1;
+    string version = 2;
+    string status = 3;
+    int32 services = 4;
+    int32 healthy_services = 5;
+    string proxy_mode = 6;
+    string load_balancer = 7;
+    google.protobuf.Timestamp created_at = 8;
+    google.protobuf.Timestamp updated_at = 9;
+}
+
+// 获取服务状态请求
+message GetServiceStatusRequest {}
+
+// 获取服务状态响应
+message GetServiceStatusResponse {
+    map<string, ServiceStatus> services = 1;
+}
+
+// 服务状态
+message ServiceStatus {
+    string name = 1;
+    string host = 2;
+    int32 port = 3;
+    int32 grpc_port = 4;
+    bool healthy = 5;
+    google.protobuf.Timestamp last_check = 6;
+    CircuitBreakerStatus circuit_breaker = 7;
+}
+
+// 熔断器状态
+message CircuitBreakerStatus {
+    string state = 1;
+    int32 failures = 2;
+}

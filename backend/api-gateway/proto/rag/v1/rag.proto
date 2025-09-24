@@ -1,0 +1,449 @@
+syntax = "proto3";
+
+package rag.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/noah-loop/backend/api-gateway/proto/rag/v1;ragpb";
+
+// RAG检索增强生成服务
+service RAGService {
+  // 知识库管理
+  rpc CreateKnowledgeBase(CreateKnowledgeBaseRequest) returns (CreateKnowledgeBaseResponse);
+  rpc GetKnowledgeBase(GetKnowledgeBaseRequest) returns (GetKnowledgeBaseResponse);
+  rpc UpdateKnowledgeBase(UpdateKnowledgeBaseRequest) returns (UpdateKnowledgeBaseResponse);
+  rpc DeleteKnowledgeBase(DeleteKnowledgeBaseRequest) returns (google.protobuf.Empty);
+  rpc ListKnowledgeBases(ListKnowledgeBasesRequest) returns (ListKnowledgeBasesResponse);
+
+  // 文档管理
+  rpc AddDocument(AddDocumentRequest) returns (AddDocumentResponse);
+  rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
+  rpc UpdateDocument(UpdateDocumentRequest) returns (UpdateDocumentResponse);
+  rpc DeleteDocument(DeleteDocumentRequest) returns (google.protobuf.Empty);
+  rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse);
+  rpc ProcessDocument(ProcessDocumentRequest) returns (google.protobuf.Empty);
+
+  // 搜索功能
+  rpc Search(SearchRequest) returns (SearchResponse);
+
+  // 批量操作
+  rpc BatchAddDocuments(BatchAddDocumentsRequest) returns (BatchAddDocumentsResponse);
+  rpc BatchDeleteDocuments(BatchDeleteDocumentsRequest) returns (BatchDeleteDocumentsResponse);
+
+  // 健康检查
+  rpc Health(google.protobuf.Empty) returns (HealthResponse);
+}
+
+// 知识库消息
+message KnowledgeBase {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  KnowledgeBaseStatus status = 4;
+  string owner_id = 5;
+  KnowledgeBaseSettings settings = 6;
+  KnowledgeBaseStats statistics = 7;
+  repeated Tag tags = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  optional google.protobuf.Timestamp last_indexed_at = 11;
+}
+
+// 知识库状态
+enum KnowledgeBaseStatus {
+  KNOWLEDGE_BASE_STATUS_UNSPECIFIED = 0;
+  KNOWLEDGE_BASE_STATUS_ACTIVE = 1;
+  KNOWLEDGE_BASE_STATUS_INACTIVE = 2;
+  KNOWLEDGE_BASE_STATUS_INDEXING = 3;
+  KNOWLEDGE_BASE_STATUS_DELETED = 4;
+}
+
+// 知识库设置
+message KnowledgeBaseSettings {
+  int32 chunk_size = 1;
+  int32 chunk_overlap = 2;
+  string embedding_model = 3;
+  string language = 4;
+  bool auto_update = 5;
+  int32 max_documents = 6;
+  float similarity_threshold = 7;
+  bool enable_metadata = 8;
+  bool enable_versioning = 9;
+}
+
+// 知识库统计
+message KnowledgeBaseStats {
+  int32 document_count = 1;
+  int32 chunk_count = 2;
+  int64 total_size = 3;
+  int32 indexed_count = 4;
+  double average_size = 5;
+  optional google.protobuf.Timestamp last_query_at = 6;
+  int64 query_count = 7;
+  float average_score = 8;
+}
+
+// 文档消息
+message Document {
+  string id = 1;
+  string title = 2;
+  string content = 3;
+  DocumentType type = 4;
+  DocumentStatus status = 5;
+  string source = 6;
+  string hash = 7;
+  int64 size = 8;
+  string language = 9;
+  repeated Tag tags = 10;
+  repeated Chunk chunks = 11;
+  DocumentMetadata metadata = 12;
+  string knowledge_base_id = 13;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp updated_at = 15;
+  optional google.protobuf.Timestamp indexed_at = 16;
+}
+
+// 文档类型
+enum DocumentType {
+  DOCUMENT_TYPE_UNSPECIFIED = 0;
+  DOCUMENT_TYPE_TEXT = 1;
+  DOCUMENT_TYPE_PDF = 2;
+  DOCUMENT_TYPE_MARKDOWN = 3;
+  DOCUMENT_TYPE_HTML = 4;
+  DOCUMENT_TYPE_WORD = 5;
+}
+
+// 文档状态
+enum DocumentStatus {
+  DOCUMENT_STATUS_UNSPECIFIED = 0;
+  DOCUMENT_STATUS_PENDING = 1;
+  DOCUMENT_STATUS_INDEXING = 2;
+  DOCUMENT_STATUS_INDEXED = 3;
+  DOCUMENT_STATUS_FAILED = 4;
+  DOCUMENT_STATUS_DELETED = 5;
+}
+
+// 文档元数据
+message DocumentMetadata {
+  string author = 1;
+  repeated string keywords = 2;
+  string description = 3;
+  string category = 4;
+  string version = 5;
+  map<string, string> custom = 6;
+}
+
+// 分块消息
+message Chunk {
+  string id = 1;
+  string document_id = 2;
+  string content = 3;
+  ChunkType type = 4;
+  int32 position = 5;
+  int32 start_index = 6;
+  int32 end_index = 7;
+  int32 token_count = 8;
+  repeated float embedding = 9;
+  ChunkMetadata metadata = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+  optional google.protobuf.Timestamp embedded_at = 13;
+}
+
+// 分块类型
+enum ChunkType {
+  CHUNK_TYPE_UNSPECIFIED = 0;
+  CHUNK_TYPE_TEXT = 1;
+  CHUNK_TYPE_PARAGRAPH = 2;
+  CHUNK_TYPE_SENTENCE = 3;
+  CHUNK_TYPE_SECTION = 4;
+  CHUNK_TYPE_TABLE = 5;
+  CHUNK_TYPE_CODE = 6;
+}
+
+// 分块元数据
+message ChunkMetadata {
+  string title = 1;
+  string section = 2;
+  repeated string keywords = 3;
+  repeated string entities = 4;
+  string sentiment = 5;
+  map<string, string> custom = 6;
+}
+
+// 标签消息
+message Tag {
+  string id = 1;
+  string name = 2;
+  TagType type = 3;
+  string description = 4;
+  string color = 5;
+  string icon = 6;
+  string parent_id = 7;
+  repeated Tag children = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  int32 usage_count = 11;
+}
+
+// 标签类型
+enum TagType {
+  TAG_TYPE_UNSPECIFIED = 0;
+  TAG_TYPE_CATEGORY = 1;
+  TAG_TYPE_KEYWORD = 2;
+  TAG_TYPE_SOURCE = 3;
+  TAG_TYPE_LANGUAGE = 4;
+  TAG_TYPE_DOMAIN = 5;
+  TAG_TYPE_CUSTOM = 6;
+}
+
+// 搜索结果
+message SearchResult {
+  string id = 1;
+  SearchResultType type = 2;
+  float score = 3;
+  string content = 4;
+  string title = 5;
+  string source = 6;
+  map<string, string> metadata = 7;
+  string highlight = 8;
+  optional ChunkInfo chunk_info = 9;
+  optional DocumentInfo document_info = 10;
+  google.protobuf.Timestamp searched_at = 11;
+}
+
+// 搜索结果类型
+enum SearchResultType {
+  SEARCH_RESULT_TYPE_UNSPECIFIED = 0;
+  SEARCH_RESULT_TYPE_DOCUMENT = 1;
+  SEARCH_RESULT_TYPE_CHUNK = 2;
+  SEARCH_RESULT_TYPE_MIXED = 3;
+}
+
+// 分块信息
+message ChunkInfo {
+  int32 position = 1;
+  int32 start_index = 2;
+  int32 end_index = 3;
+  int32 token_count = 4;
+  string chunk_type = 5;
+}
+
+// 文档信息
+message DocumentInfo {
+  string document_id = 1;
+  string document_type = 2;
+  string language = 3;
+  int64 size = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp indexed_at = 6;
+}
+
+// 搜索过滤器
+message SearchFilters {
+  repeated string document_types = 1;
+  repeated string tags = 2;
+  optional DateRange date_range = 3;
+  repeated string sources = 4;
+  repeated string languages = 5;
+  map<string, string> custom = 6;
+}
+
+// 日期范围
+message DateRange {
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
+}
+
+// 搜索类型
+enum SearchType {
+  SEARCH_TYPE_UNSPECIFIED = 0;
+  SEARCH_TYPE_SEMANTIC = 1;
+  SEARCH_TYPE_LEXICAL = 2;
+  SEARCH_TYPE_HYBRID = 3;
+}
+
+// 请求/响应消息
+
+// 创建知识库
+message CreateKnowledgeBaseRequest {
+  string name = 1;
+  string description = 2;
+  string owner_id = 3;
+  optional KnowledgeBaseSettings settings = 4;
+  repeated string tags = 5;
+}
+
+message CreateKnowledgeBaseResponse {
+  KnowledgeBase knowledge_base = 1;
+  string message = 2;
+}
+
+// 获取知识库
+message GetKnowledgeBaseRequest {
+  string id = 1;
+  bool include_documents = 2;
+  bool include_stats = 3;
+}
+
+message GetKnowledgeBaseResponse {
+  KnowledgeBase knowledge_base = 1;
+  repeated Document documents = 2;
+}
+
+// 更新知识库
+message UpdateKnowledgeBaseRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional KnowledgeBaseStatus status = 4;
+  optional KnowledgeBaseSettings settings = 5;
+  repeated string tags = 6;
+}
+
+message UpdateKnowledgeBaseResponse {
+  KnowledgeBase knowledge_base = 1;
+  string message = 2;
+}
+
+// 删除知识库
+message DeleteKnowledgeBaseRequest {
+  string id = 1;
+}
+
+// 列出知识库
+message ListKnowledgeBasesRequest {
+  string owner_id = 1;
+  optional string status = 2;
+  int32 offset = 3;
+  int32 limit = 4;
+}
+
+message ListKnowledgeBasesResponse {
+  repeated KnowledgeBase knowledge_bases = 1;
+  int64 total = 2;
+  int32 offset = 3;
+  int32 limit = 4;
+}
+
+// 添加文档
+message AddDocumentRequest {
+  string title = 1;
+  string content = 2;
+  DocumentType type = 3;
+  string source = 4;
+  string language = 5;
+  string knowledge_base_id = 6;
+  optional DocumentMetadata metadata = 7;
+  repeated string tags = 8;
+}
+
+message AddDocumentResponse {
+  Document document = 1;
+  string message = 2;
+}
+
+// 获取文档
+message GetDocumentRequest {
+  string id = 1;
+  bool include_content = 2;
+  bool include_chunks = 3;
+}
+
+message GetDocumentResponse {
+  Document document = 1;
+}
+
+// 更新文档
+message UpdateDocumentRequest {
+  string id = 1;
+  optional string title = 2;
+  optional string content = 3;
+  optional DocumentStatus status = 4;
+  optional DocumentMetadata metadata = 5;
+  repeated string tags = 6;
+}
+
+message UpdateDocumentResponse {
+  Document document = 1;
+  string message = 2;
+}
+
+// 删除文档
+message DeleteDocumentRequest {
+  string id = 1;
+}
+
+// 列出文档
+message ListDocumentsRequest {
+  string knowledge_base_id = 1;
+  optional string status = 2;
+  optional string type = 3;
+  int32 offset = 4;
+  int32 limit = 5;
+}
+
+message ListDocumentsResponse {
+  repeated Document documents = 1;
+  int64 total = 2;
+  int32 offset = 3;
+  int32 limit = 4;
+}
+
+// 处理文档
+message ProcessDocumentRequest {
+  string document_id = 1;
+  bool force_reprocess = 2;
+}
+
+// 搜索
+message SearchRequest {
+  string query = 1;
+  string knowledge_base_id = 2;
+  int32 top_k = 3;
+  float score_threshold = 4;
+  SearchType search_type = 5;
+  optional SearchFilters filters = 6;
+  bool rerank = 7;
+  bool include_metadata = 8;
+}
+
+message SearchResponse {
+  repeated SearchResult results = 1;
+  int32 total = 2;
+  SearchRequest query = 3;
+  int64 duration_ms = 4;
+}
+
+// 批量添加文档
+message BatchAddDocumentsRequest {
+  string knowledge_base_id = 1;
+  repeated AddDocumentRequest documents = 2;
+}
+
+message BatchAddDocumentsResponse {
+  int32 success_count = 1;
+  int32 total_count = 2;
+  repeated string errors = 3;
+  string message = 4;
+}
+
+// 批量删除文档
+message BatchDeleteDocumentsRequest {
+  repeated string document_ids = 1;
+}
+
+message BatchDeleteDocumentsResponse {
+  int32 success_count = 1;
+  int32 total_count = 2;
+  repeated string errors = 3;
+  string message = 4;
+}
+
+// 健康检查
+message HealthResponse {
+  string status = 1;
+  string service = 2;
+  string message = 3;
+}

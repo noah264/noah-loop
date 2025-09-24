@@ -1,0 +1,160 @@
+# Noah-Loop 微服务应用配置文件
+#
+# 环境变量覆盖说明：
+# 所有配置项都可以通过环境变量覆盖，格式为：SECTION_KEY（大写，点号用下划线替换）
+# 例如：
+# - SERVICES_AGENT_PORT=8081
+# - SERVICES_LLM_PORT=8082
+# - DATABASE_HOST=localhost
+# - LOG_LEVEL=debug
+
+app:
+  name: "noah-loop"
+  version: "1.0.0"
+  environment: "development"
+  debug: true
+
+http:
+  port: 8080
+  read_timeout: "30s"
+  write_timeout: "30s"
+  idle_timeout: "120s"
+  shutdown_timeout: "30s"
+
+grpc:
+  port: 9090
+
+# etcd配置 - 新增
+etcd:
+  endpoints: ["localhost:2379"]
+  username: ""
+  password: ""
+  dial_timeout: "5s"
+  dial_keepalive_time: "10s"
+  dial_keepalive_timeout: "3s"
+  max_call_send_msg_size: 2097152  # 2MB
+  max_call_recv_msg_size: 4194304  # 4MB
+  log_level: "warn"
+  tls:
+    cert_file: ""
+    key_file: ""
+    ca_file: ""
+    insecure: false
+
+# 各微服务端口配置
+services:
+  # Agent智能体服务
+  agent:
+    port: 8081
+    grpc_port: 9091
+  
+  # LLM大语言模型服务  
+  llm:
+    port: 8082
+    grpc_port: 9092
+  
+  # MCP模型上下文协议服务
+  mcp:
+    port: 8083
+    grpc_port: 9093
+  
+  # Orchestrator编排器服务
+  orchestrator:
+    port: 8084
+    grpc_port: 9094
+  
+  # RAG检索增强生成服务
+  rag:
+    port: 8085
+    grpc_port: 9095
+  
+  # Notify通知服务
+  notify:
+    port: 8086
+    grpc_port: 9096
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "postgres"
+  database: "agent_db"
+  sslmode: "disable"
+  max_open_conns: 25
+  max_idle_conns: 10
+  max_lifetime: "5m"
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+  pool_size: 10
+  min_idle_conns: 5
+  dial_timeout: "5s"
+  read_timeout: "3s"
+  write_timeout: "3s"
+
+log:
+  level: "info"
+  format: "json"
+
+# Kafka消息队列配置
+kafka:
+  brokers:
+    - "localhost:9092"
+  # 生产者配置
+  producer:
+    retry_max: 3
+    retry_backoff: 100ms
+    batch_size: 16384
+    linger_ms: 10
+    compression: "snappy"
+    idempotent: true
+    max_message_bytes: 1000000
+  # 消费者配置
+  consumer:
+    group_id: "noah-loop-consumers"
+    auto_offset_reset: "latest"
+    enable_auto_commit: false
+    session_timeout: 30s
+    heartbeat_interval: 3s
+    max_poll_records: 500
+    fetch_min_bytes: 1
+    fetch_max_wait: 500ms
+  # 主题配置
+  topics:
+    events: "noah-loop.events"
+    notifications: "noah-loop.notifications"
+    logs: "noah-loop.logs"
+    metrics: "noah-loop.metrics"
+  # 连接配置
+  connection:
+    timeout: 30s
+    keep_alive: 60s
+    max_idle_conns: 10
+  # 安全配置
+  security:
+    enabled: false
+    protocol: "SASL_PLAINTEXT"
+    mechanism: "PLAIN"
+    username: ""
+    password: ""
+    ca_cert: ""
+    client_cert: ""
+    client_key: ""
+
+# 链路追踪配置 - 新增
+tracing:
+  service_name: "noah-loop-gateway"
+  service_version: "1.0.0"
+  environment: "development"
+  jaeger_endpoint: "http://localhost:14268/api/traces"
+  sample_rate: 1.0  # 开发环境100%采样，生产环境建议0.1
+  enabled: true
+  enable_grpc: true
+  enable_http: true
+  enable_database: true
+  enable_custom: true
+  max_export_batch_size: 512
+  export_timeout: 30
+  max_queue_size: 2048

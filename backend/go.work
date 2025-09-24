@@ -1,0 +1,11 @@
+go 1.21
+
+use (
+	./shared
+	./modules/llm
+	./modules/agent
+	./modules/mcp
+	./modules/orchestrator
+	./api-gateway
+)
+

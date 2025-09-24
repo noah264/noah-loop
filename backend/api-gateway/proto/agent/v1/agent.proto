@@ -1,0 +1,144 @@
+syntax = "proto3";
+
+package agent.v1;
+
+option go_package = "github.com/noah-loop/backend/api-gateway/proto/agent/v1;agentv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+// Agent服务定义
+service AgentService {
+    // 创建智能体
+    rpc CreateAgent(CreateAgentRequest) returns (CreateAgentResponse);
+    
+    // 获取智能体
+    rpc GetAgent(GetAgentRequest) returns (GetAgentResponse);
+    
+    // 获取智能体列表
+    rpc ListAgents(ListAgentsRequest) returns (ListAgentsResponse);
+    
+    // 更新智能体
+    rpc UpdateAgent(UpdateAgentRequest) returns (UpdateAgentResponse);
+    
+    // 删除智能体
+    rpc DeleteAgent(DeleteAgentRequest) returns (DeleteAgentResponse);
+    
+    // 与智能体对话
+    rpc Chat(ChatRequest) returns (ChatResponse);
+    
+    // 流式对话
+    rpc StreamChat(ChatRequest) returns (stream ChatResponse);
+    
+    // 执行工具
+    rpc ExecuteTool(ExecuteToolRequest) returns (ExecuteToolResponse);
+}
+
+// 创建智能体请求
+message CreateAgentRequest {
+    string name = 1;
+    string type = 2;
+    string owner_id = 3;
+    string description = 4;
+    string system_prompt = 5;
+    int32 memory_capacity = 6;
+    map<string, string> metadata = 7;
+}
+
+// 创建智能体响应
+message CreateAgentResponse {
+    Agent agent = 1;
+}
+
+// 获取智能体请求
+message GetAgentRequest {
+    string agent_id = 1;
+}
+
+// 获取智能体响应  
+message GetAgentResponse {
+    Agent agent = 1;
+}
+
+// 智能体列表请求
+message ListAgentsRequest {
+    string owner_id = 1;
+    int32 page = 2;
+    int32 page_size = 3;
+}
+
+// 智能体列表响应
+message ListAgentsResponse {
+    repeated Agent agents = 1;
+    int32 total = 2;
+    int32 page = 3;
+    int32 page_size = 4;
+}
+
+// 更新智能体请求
+message UpdateAgentRequest {
+    string agent_id = 1;
+    string name = 2;
+    string description = 3;
+    string system_prompt = 4;
+    int32 memory_capacity = 5;
+}
+
+// 更新智能体响应
+message UpdateAgentResponse {
+    Agent agent = 1;
+}
+
+// 删除智能体请求
+message DeleteAgentRequest {
+    string agent_id = 1;
+}
+
+// 删除智能体响应
+message DeleteAgentResponse {
+    bool success = 1;
+}
+
+// 对话请求
+message ChatRequest {
+    string agent_id = 1;
+    string session_id = 2;
+    string message = 3;
+    map<string, string> context = 4;
+}
+
+// 对话响应
+message ChatResponse {
+    string response = 1;
+    string session_id = 2;
+    map<string, string> context = 3;
+}
+
+// 工具执行请求
+message ExecuteToolRequest {
+    string agent_id = 1;
+    string tool_id = 2;
+    google.protobuf.Any input = 3;
+}
+
+// 工具执行响应
+message ExecuteToolResponse {
+    google.protobuf.Any output = 1;
+    bool success = 2;
+    string error = 3;
+}
+
+// 智能体实体
+message Agent {
+    string id = 1;
+    string name = 2;
+    string type = 3;
+    string owner_id = 4;
+    string description = 5;
+    string system_prompt = 6;
+    int32 memory_capacity = 7;
+    string status = 8;
+    map<string, string> metadata = 9;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp updated_at = 11;
+}

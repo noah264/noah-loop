@@ -1,0 +1,67 @@
+groups:
+  - name: agent_app_alerts
+    rules:
+      # Token消耗告警
+      - alert: HighTokenConsumption
+        expr: rate(agent_app_llm_tokens_consumed_total[5m]) > 1000
+        for: 2m
+        labels:
+          severity: warning
+          service: llm
+        annotations:
+          summary: "High token consumption detected"
+          description: "Token consumption rate is {{ $value }} tokens/sec for {{ $labels.model_name }}"
+
+      # 高错误率告警
+      - alert: HighErrorRate
+        expr: rate(agent_app_llm_http_requests_total{status_code!~"2.."}[5m]) / rate(agent_app_llm_http_requests_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.job }}"
+
+      # 响应时间告警
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(agent_app_llm_http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "High latency detected"
+          description: "95th percentile latency is {{ $value }}s for {{ $labels.endpoint }}"
+
+      # 工作流执行失败告警
+      - alert: WorkflowExecutionFailed
+        expr: increase(agent_app_orchestrator_workflow_executions_total{status="failed"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: orchestrator
+        annotations:
+          summary: "Workflow execution failed"
+          description: "Workflow {{ $labels.workflow_id }} failed"
+
+      # 服务不可用告警
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service is down"
+          description: "{{ $labels.job }} service is down"
+
+      # 活跃会话过多告警
+      - alert: TooManyActiveSessions
+        expr: agent_app_mcp_active_sessions{session_type="active"} > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: mcp
+        annotations:
+          summary: "Too many active sessions"
+          description: "Active sessions count is {{ $value }}"

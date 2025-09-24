@@ -1,0 +1,80 @@
+# Prometheus配置文件
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager配置
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# 规则文件
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# 抓取配置
+scrape_configs:
+  # Prometheus自身
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Noah-Loop微服务
+  - job_name: 'noah-loop-api-gateway'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'noah-loop-agent'
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'noah-loop-llm'
+    static_configs:
+      - targets: ['host.docker.internal:8082']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'noah-loop-mcp'
+    static_configs:
+      - targets: ['host.docker.internal:8083']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'noah-loop-orchestrator'
+    static_configs:
+      - targets: ['host.docker.internal:8084']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'noah-loop-rag'
+    static_configs:
+      - targets: ['host.docker.internal:8085']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'noah-loop-notify'
+    static_configs:
+      - targets: ['host.docker.internal:8086']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  # Kafka JMX指标
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka:9101']
+    scrape_interval: 10s
+
+  # etcd指标
+  - job_name: 'etcd'
+    static_configs:
+      - targets: ['etcd:2379']
+    metrics_path: '/metrics'
+    scrape_interval: 10s

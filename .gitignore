@@ -1,0 +1,312 @@
+# ====================
+# 操作系统生成的文件
+# ====================
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ====================
+# IDE 和编辑器文件
+# ====================
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ====================
+# Go 语言相关
+# ====================
+
+# 编译后的二进制文件
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 测试二进制文件，使用go test -c构建
+*.test
+
+# 输出的delve调试器二进制文件
+__debug_bin*
+
+# Go工作区文件
+go.work.sum
+
+# 依赖目录（可选，推荐使用go modules）
+vendor/
+
+# 覆盖率文件
+*.out
+coverage.txt
+coverage.html
+
+# 性能分析文件
+*.prof
+*.pprof
+
+# Air 热重载工具的临时文件
+tmp/
+
+# ====================
+# 前端相关（Node.js/npm/yarn）
+# ====================
+
+# npm
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Yarn
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# pnpm
+.pnpm-store/
+
+# 构建输出
+dist/
+build/
+.next/
+.nuxt/
+.output/
+.vercel/
+
+# 缓存
+.cache/
+.parcel-cache/
+
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ====================
+# Docker 相关
+# ====================
+
+# Docker compose override文件
+docker-compose.override.yml
+
+# Docker volumes数据目录
+volumes/
+data/
+
+# ====================
+# 日志和临时文件
+# ====================
+
+# 日志文件
+*.log
+logs/
+log/
+
+# 临时文件和目录
+tmp/
+temp/
+.tmp/
+*.tmp
+*.temp
+
+# 运行时文件
+*.pid
+*.seed
+*.pid.lock
+
+# ====================
+# 配置和密钥文件
+# ====================
+
+# 环境配置文件（包含敏感信息）
+.env*
+!.env.example
+!.env.template
+
+# SSL证书和密钥
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+
+# 配置文件（可能包含敏感信息）
+config/local.*
+configs/local.*
+secrets/
+.secrets/
+
+# ====================
+# 数据库和存储
+# ====================
+
+# SQLite数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 数据备份
+*.bak
+*.backup
+
+# ====================
+# 监控和度量
+# ====================
+
+# Prometheus数据目录
+prometheus_data/
+
+# Grafana数据目录
+grafana_data/
+
+# ====================
+# 构建和部署相关
+# ====================
+
+# 构建产物
+bin/
+pkg/
+dist/
+target/
+release/build/
+release/tmp/
+
+# Kubernetes生成的文件
+*.generated.yaml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# ====================
+# 依赖和包管理
+# ====================
+
+# Go modules下载缓存
+go.sum.backup
+
+# 包管理器锁文件的备份
+package-lock.json.backup
+yarn.lock.backup
+
+# ====================
+# 测试和覆盖率
+# ====================
+
+# 测试报告
+test-results/
+coverage/
+.coverage
+htmlcov/
+
+# Benchmark结果
+benchmark_results/
+
+# ====================
+# 其他
+# ====================
+
+# 压缩文件
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# 备份文件
+*.orig
+*.rej
+*~
+
+# 系统文件
+.directory
+
+# JetBrains全家桶的用户特定文件
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
+
+# 但保留项目配置文件
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+!.idea/runConfigurations/
+
+# ====================
+# 项目特定忽略
+# ====================
+
+# Wire生成的文件（如果不需要版本控制）
+# wire_gen.go
+
+# proto生成的文件（如果从其他地方生成）
+# *.pb.go
+# *.pb.gw.go
+
+# 本地开发配置
+local/
+dev/
+
+# 性能测试结果
+perf/
+benchmarks/
